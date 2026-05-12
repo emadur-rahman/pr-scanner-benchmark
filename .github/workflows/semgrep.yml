@@ -19,6 +19,47 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: p/owasp-top-ten
+        id: semgrep
+        run: |
+          pip install semgrep
+          semgrep --config=p/owasp-top-ten --json > semgrep_results.json || true
+
+      - name: Post Semgrep findings as PR comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, requests
+
+          with open("semgrep_results.json") as f:
+              data = json.load(f)
+
+          results = data.get("results", [])
+
+          if not results:
+              body = "## Semgrep Findings\n\n✅ No findings detected."
+          else:
+              body = "## Semgrep Findings\n\n"
+              for r in results:
+                  rule = r.get("check_id", "unknown")
+                  filepath = r.get("path", "unknown")
+                  line = r.get("start", {}).get("line", "?")
+                  message = r.get("extra", {}).get("message", "")
+                  severity = r.get("extra", {}).get("severity", "")
+                  body += f"- **Rule:** {rule}\n"
+                  body += f"  - **File:** `{filepath}` (line {line})\n"
+                  body += f"  - **Severity:** {severity}\n"
+                  body += f"  - **Message:** {message}\n\n"
+
+          token = os.environ["GITHUB_TOKEN"]
+          repo = os.environ["REPO"]
+          pr = os.environ["PR_NUMBER"]
+
+          requests.post(
+              f"https://api.github.com/repos/{repo}/issues/{pr}/comments",
+              headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+              json={"body": body}
+          )
+          EOF
