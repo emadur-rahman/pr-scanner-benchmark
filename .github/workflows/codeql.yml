@@ -25,20 +25,6 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:python"
-      - name: Debug SARIF
-        run: |
-          find /home/runner/work -name "*.sarif" 2>/dev/null
-          for f in $(find /home/runner/work -name "*.sarif" 2>/dev/null); do
-            echo "=== $f ==="
-            python3 -c "
-          import json
-          with open('$f') as fh:
-              d = json.load(fh)
-          for run in d.get('runs', []):
-              for rule in run.get('tool', {}).get('driver', {}).get('rules', [])[:3]:
-                  print(rule.get('id'), rule.get('properties', {}))
-          "
-          done
       - name: Post CodeQL findings as PR comment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -60,21 +46,11 @@ jobs:
                       rule_id = result.get("ruleId", "unknown")
                       rule = rules.get(rule_id, {})
                       message = result.get("message", {}).get("text", "")
-                      sec_score = rule.get("properties", {}).get("security-severity", "")
-                      if sec_score:
-                          score = float(sec_score)
-                          if score >= 9.0:
-                              severity = "critical"
-                          elif score >= 7.0:
-                              severity = "high"
-                          elif score >= 4.0:
-                              severity = "medium"
-                          else:
-                              severity = "low"
-                      else:
-                          severity = (rule.get("properties", {}).get("problem.severity")
-                                      or rule.get("defaultConfiguration", {}).get("level")
-                                      or "unknown")
+                      severity = (rule.get("properties", {}).get("security-severity")
+                                  or rule.get("properties", {}).get("problem.severity")
+                                  or rule.get("defaultConfiguration", {}).get("level")
+                                  or result.get("level")
+                                  or "unknown")
                       locations = result.get("locations", [])
                       for loc in locations:
                           filepath = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "unknown")
