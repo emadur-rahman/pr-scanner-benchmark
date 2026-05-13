@@ -25,13 +25,6 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:python"
-          output: codeql-results
-          upload: false
-      - name: Upload SARIF (optional, ignore failure)
-        uses: github/codeql-action/upload-sarif@v3
-        continue-on-error: true
-        with:
-          sarif_file: codeql-results
       - name: Post CodeQL findings as PR comment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -40,7 +33,9 @@ jobs:
         run: |
           python3 - <<'EOF'
           import json, os, requests, glob
-          sarif_files = glob.glob("codeql-results/**/*.sarif", recursive=True)
+          sarif_files = glob.glob("/home/runner/work/_temp/codeql_databases/../**/*.sarif", recursive=True) or \
+                        glob.glob("../results/**/*.sarif", recursive=True) or \
+                        glob.glob("/home/runner/work/**/*.sarif", recursive=True)
           findings = []
           for sarif_file in sarif_files:
               with open(sarif_file) as f:
