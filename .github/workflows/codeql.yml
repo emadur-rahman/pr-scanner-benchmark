@@ -32,7 +32,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           python3 - <<'EOF'
-          import json, os, requests, glob
+          import json, os, requests, glob, re
           sarif_files = glob.glob("/home/runner/work/_temp/codeql_databases/../**/*.sarif", recursive=True) or \
                         glob.glob("../results/**/*.sarif", recursive=True) or \
                         glob.glob("/home/runner/work/**/*.sarif", recursive=True)
@@ -46,7 +46,11 @@ jobs:
                       rule_id = result.get("ruleId", "unknown")
                       rule = rules.get(rule_id, {})
                       message = result.get("message", {}).get("text", "")
-                      severity = rule.get("properties", {}).get("problem.severity", "unknown")
+                      message = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', message)
+                      severity = (rule.get("properties", {}).get("problem.severity")
+                                  or rule.get("defaultConfiguration", {}).get("level")
+                                  or result.get("level")
+                                  or "unknown")
                       locations = result.get("locations", [])
                       for loc in locations:
                           filepath = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "unknown")
