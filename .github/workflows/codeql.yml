@@ -25,6 +25,20 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:python"
+      - name: Debug SARIF
+        run: |
+          find /home/runner/work -name "*.sarif" 2>/dev/null
+          for f in $(find /home/runner/work -name "*.sarif" 2>/dev/null); do
+            echo "=== $f ==="
+            python3 -c "
+          import json
+          with open('$f') as fh:
+              d = json.load(fh)
+          for run in d.get('runs', []):
+              for rule in run.get('tool', {}).get('driver', {}).get('rules', [])[:3]:
+                  print(rule.get('id'), rule.get('properties', {}))
+          "
+          done
       - name: Post CodeQL findings as PR comment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
