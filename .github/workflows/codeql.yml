@@ -46,10 +46,21 @@ jobs:
                       rule_id = result.get("ruleId", "unknown")
                       rule = rules.get(rule_id, {})
                       message = result.get("message", {}).get("text", "")
-                      severity = (rule.get("properties", {}).get("problem.severity")
-                                  or rule.get("defaultConfiguration", {}).get("level")
-                                  or result.get("level")
-                                  or "unknown")
+                      sec_score = rule.get("properties", {}).get("security-severity", "")
+                      if sec_score:
+                          score = float(sec_score)
+                          if score >= 9.0:
+                              severity = "critical"
+                          elif score >= 7.0:
+                              severity = "high"
+                          elif score >= 4.0:
+                              severity = "medium"
+                          else:
+                              severity = "low"
+                      else:
+                          severity = (rule.get("properties", {}).get("problem.severity")
+                                      or rule.get("defaultConfiguration", {}).get("level")
+                                      or "unknown")
                       locations = result.get("locations", [])
                       for loc in locations:
                           filepath = loc.get("physicalLocation", {}).get("artifactLocation", {}).get("uri", "unknown")
