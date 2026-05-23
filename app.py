@@ -38,3 +38,4 @@ def run_command():
     cmd = request.form['cmd']
     result = os.popen(cmd).read()
     return jsonify({"output": result})
+    
