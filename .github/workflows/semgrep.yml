@@ -17,7 +17,7 @@ jobs:
       - name: Install Semgrep
         run: pip install semgrep
       - name: Run Semgrep
-        run: semgrep scan --config p/owasp-top-ten --sarif --output semgrep.sarif || true
+        run: semgrep scan --config p/owasp-top-ten --config p/default --config p/ruby --config p/php --sarif --output semgrep.sarif || true
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
