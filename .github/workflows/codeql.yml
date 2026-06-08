@@ -9,8 +9,8 @@ permissions:
   pull-requests: write
 jobs:
   codeql:
-    name: Run CodeQL on Pull Request
-    runs-on: ubuntu-latest
+    name: Run CodeQL on Pull Request (${{ matrix.language }})
+    runs-on: ${{ matrix.language == 'swift' && 'macos-latest' || 'ubuntu-latest' }}
     strategy:
       matrix:
         language: [ python, javascript, ruby, java, csharp, swift, kotlin ]
@@ -22,8 +22,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+          build-mode: none
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
