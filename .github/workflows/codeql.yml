@@ -3,30 +3,28 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
-
 permissions:
   contents: read
   security-events: write
   pull-requests: write
-
 jobs:
   codeql:
     name: Run CodeQL on Pull Request
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        language: [ python, javascript, ruby, java, csharp, swift, kotlin ]
+      fail-fast: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: python
-
+          languages: ${{ matrix.language }}
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
-
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:python"
+          category: "/language:${{ matrix.language }}"
